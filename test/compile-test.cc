@@ -436,7 +436,7 @@ TEST(compile_time_formatting_test, multibyte_fill) {
 }
 #endif
 
-#if defined(__cpp_lib_constexpr_string)
+#if FMT_USE_CONSTEXPR_STRING
 
 template<auto Lambda>
 consteval auto to_test_string() {

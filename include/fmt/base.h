@@ -141,7 +141,12 @@
 #  define FMT_CONSTEXPR20
 #endif
 
-#if defined(__cpp_lib_constexpr_string)
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#  define FMT_USE_CONSTEXPR_STRING 1
+#else
+#  define FMT_USE_CONSTEXPR_STRING 0
+#endif
+#if FMT_USE_CONSTEXPR_STRING
 #  define FMT_CONSTEXPR_STRING constexpr
 #else
 #  define FMT_CONSTEXPR_STRING
