@@ -42,7 +42,7 @@ namespace detail {
 #endif
 
 template <typename T, typename... Tail>
-auto first(const T& value, const Tail&...) -> const T& {
+FMT_CONSTEXPR auto first(const T& value, const Tail&...) -> const T& {
   return value;
 }
 
@@ -436,7 +436,7 @@ FMT_BEGIN_EXPORT
 template <typename CompiledFormat, typename... Args,
           typename Char = typename CompiledFormat::char_type,
           FMT_ENABLE_IF(detail::is_compiled_format<CompiledFormat>::value)>
-FMT_INLINE std::basic_string<Char> format(const CompiledFormat& cf,
+FMT_INLINE FMT_CONSTEXPR_STRING std::basic_string<Char> format(const CompiledFormat& cf,
                                           const Args&... args) {
   auto s = std::basic_string<Char>();
   cf.format(std::back_inserter(s), args...);
@@ -452,7 +452,7 @@ constexpr FMT_INLINE OutputIt format_to(OutputIt out, const CompiledFormat& cf,
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(is_compiled_string<S>::value)>
-FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
+FMT_INLINE FMT_CONSTEXPR_STRING std::basic_string<typename S::char_type> format(const S&,
                                                            Args&&... args) {
   if constexpr (std::is_same<typename S::char_type, char>::value) {
     constexpr auto str = basic_string_view<typename S::char_type>(S());

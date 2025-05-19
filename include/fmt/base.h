@@ -141,6 +141,13 @@
 #  define FMT_CONSTEXPR20
 #endif
 
+#if defined(__cpp_lib_constexpr_string)
+#  define FMT_CONSTEXPR_STRING constexpr
+#else
+#  define FMT_CONSTEXPR_STRING
+#endif
+
+
 // Check if exceptions are disabled.
 #ifdef FMT_USE_EXCEPTIONS
 // Use the provided definition.

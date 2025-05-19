@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include "fmt/compile.h"
+#include <gtest/gtest.h>
 
 #include <iterator>
 #include <list>
@@ -420,4 +421,87 @@ TEST(compile_time_formatting_test, custom_type) {
 TEST(compile_time_formatting_test, multibyte_fill) {
   EXPECT_EQ("жж42", test_format<8>(FMT_COMPILE("{:ж>4}"), 42));
 }
+#endif
+
+#if defined(__cpp_lib_constexpr_string)
+
+template<auto Lambda>
+consteval auto to_test_string() {
+  constexpr auto size = [] () {
+    return Lambda().size();
+  }();
+
+  auto str = Lambda();
+
+  test_string<size + 1, char> static_string{};
+  for (std::size_t i = {}; i < str.size(); i++) {
+    static_string.buffer[i] = str[i];
+  }
+
+  return static_string;
+}
+
+TEST(compile_time_format, bool) {
+  EXPECT_EQ("true", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), true); }>());
+  EXPECT_EQ("false", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), false); }>());
+  EXPECT_EQ("true ", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:5}"), true); }>());
+  EXPECT_EQ("1", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:d}"), true); }>());
+}
+
+TEST(compile_time_format, integer) {
+  EXPECT_EQ("42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), 42); }>());
+  EXPECT_EQ("420", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), 420); }>());
+  EXPECT_EQ("42 42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{} {}"), 42, 42); }>());
+  EXPECT_EQ("42 42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{} {}"), uint32_t{42}, uint64_t{42}); }>());
+
+  EXPECT_EQ("+42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:+}"), 42); }>());
+  EXPECT_EQ("42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:-}"), 42); }>());
+  EXPECT_EQ(" 42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{: }"), 42); }>());
+
+  EXPECT_EQ("-0042", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:05}"), -42); }>());
+
+  EXPECT_EQ("101010", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:b}"), 42); }>());
+  EXPECT_EQ("0b101010", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:#b}"), 42); }>());
+  EXPECT_EQ("0B101010", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:#B}"), 42); }>());
+  EXPECT_EQ("042", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:#o}"), 042); }>());
+  EXPECT_EQ("0x4a", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:#x}"), 0x4a); }>());
+  EXPECT_EQ("0X4A", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:#X}"), 0x4a); }>());
+
+  EXPECT_EQ("   42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:5}"), 42); }>());
+  EXPECT_EQ("   42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:5}"), 42l); }>());
+  EXPECT_EQ("   42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:5}"), 42ll); }>());
+  EXPECT_EQ("   42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:5}"), 42ull); }>());
+
+  EXPECT_EQ("42  ", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:<4}"), 42); }>());
+  EXPECT_EQ("  42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:>4}"), 42); }>());
+  EXPECT_EQ(" 42 ", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:^4}"), 42); }>());
+  EXPECT_EQ("**-42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:*>5}"), -42); }>());
+}
+
+TEST(compile_time_format, char) {
+  EXPECT_EQ("c", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), 'c'); }>());
+
+  EXPECT_EQ("c  ", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:3}"), 'c'); }>());
+  EXPECT_EQ("99", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:d}"), 'c'); }>());
+}
+
+TEST(compile_time_format, string) {
+  EXPECT_EQ("42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), "42"); }>());
+  EXPECT_EQ("The answer is 42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{} is {}"), "The answer", "42"); }>());
+
+  EXPECT_EQ("abc**", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:*<5}"), "abc"); }>());
+  EXPECT_EQ("**🤡**", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:*^6}"), "🤡"); }>());
+}
+
+TEST(compile_time_format, combination) {
+  EXPECT_EQ("420, true, answer", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}, {}, {}"), 420, true, "answer"); }>());
+
+  EXPECT_EQ(" -42", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:{}}"), -42, 4); }>());
+}
+
+TEST(compile_time_format, custom_type) {
+  EXPECT_EQ("foo", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), test_formattable()); }>());
+  EXPECT_EQ("bar", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:b}"), test_formattable()); }>());
+}
+
 #endif
