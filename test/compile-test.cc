@@ -61,7 +61,19 @@ template <> struct formatter<test_formattable> : formatter<const char*> {
                                           ctx);
   }
 };
+
 FMT_END_NAMESPACE
+
+namespace test_as {
+
+struct formattable {};
+
+constexpr auto format_as(formattable) {
+  return "fob";
+}
+
+} // namespace test_as
+
 
 TEST(compile_test, format_default) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42));
@@ -415,6 +427,7 @@ TEST(compile_time_formatting_test, combination) {
 
 TEST(compile_time_formatting_test, custom_type) {
   EXPECT_EQ("foo", test_format<4>(FMT_COMPILE("{}"), test_formattable()));
+  EXPECT_EQ("fob", test_format<4>(FMT_COMPILE("{}"), test_as::formattable()));
   EXPECT_EQ("bar", test_format<4>(FMT_COMPILE("{:b}"), test_formattable()));
 }
 
@@ -501,6 +514,7 @@ TEST(compile_time_format, combination) {
 
 TEST(compile_time_format, custom_type) {
   EXPECT_EQ("foo", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), test_formattable()); }>());
+  EXPECT_EQ("fob", to_test_string<[] () { return fmt::format(FMT_COMPILE("{}"), test_as::formattable()); }>());
   EXPECT_EQ("bar", to_test_string<[] () { return fmt::format(FMT_COMPILE("{:b}"), test_formattable()); }>());
 }
 

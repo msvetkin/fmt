@@ -4215,7 +4215,7 @@ FMT_NODISCARD FMT_CONSTEXPR_STRING auto to_string(T value) -> std::string {
 }
 
 template <typename T, FMT_ENABLE_IF(detail::use_format_as<T>::value)>
-FMT_NODISCARD auto to_string(const T& value) -> std::string {
+FMT_NODISCARD FMT_CONSTEXPR_STRING auto to_string(const T& value) -> std::string {
   return to_string(format_as(value));
 }
 
